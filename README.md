@@ -3,6 +3,13 @@
 </p>
 <h1 align="center">LikeTriple 一键三连</h1>
 
+<p align="center">
+<br>
+<a title="Docker Pulls" target="_blank" href="https://hub.docker.com/r/mirrors2/liketriple"><img src="https://img.shields.io/docker/pulls/mirrors2/liketriple.svg?logo=docker&label=docker&style=flat-square"></a>
+
+</p>
+
+
 >LikeTriple 是一个B站视频下载工具，他能很方便的下载你B站投币视频。
 
 由于未知原因，你的收藏夹的视频看着看着就没了。
@@ -28,6 +35,10 @@ mirrors2/liketriple
   ![](doc/coinvideo.png)
 
 ## 成果展示
+```
+// 检查启动日志
+docker logs liketriple
+```
 ![](doc/start_succ.png)
 
 
