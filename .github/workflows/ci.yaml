@@ -1,4 +1,5 @@
 # https://github.com/docker/setup-buildx-action
+# https://www.docker.com/blog/multi-arch-build-and-images-the-simple-way/
 # https://github.com/marketplace/actions/docker-buildx
 # https://github.com/crazy-max/diun/blob/master/.github/workflows/build.yml
 name: Docker Image CI
@@ -22,12 +23,12 @@ jobs:
         uses: crazy-max/ghaction-docker-buildx@v3.3.1
         with:
           buildx-version: latest
+          qemu-version: latest
       -
         name: Available platforms
         run: echo ${{ steps.buildx.outputs.platforms }}
       -
         name: Login to DockerHub
-        if: success() && github.event_name != 'pull_request'
         uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
