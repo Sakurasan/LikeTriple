@@ -5,6 +5,7 @@
 
 <p align="center">
 <br>
+<a title="Docker Image CI" target="_blank" href="https://github.com/Sakurasan/LikeTriple/actions"><img src="https://img.shields.io/github/workflow/status/Sakurasan/LikeTriple/Docker%20Image%20CI?label=Actions&logo=github&style=flat-square"></a>
 <a title="Docker Pulls" target="_blank" href="https://hub.docker.com/r/mirrors2/liketriple"><img src="https://img.shields.io/docker/pulls/mirrors2/liketriple.svg?logo=docker&label=docker&style=flat-square"></a>
 
 </p>
