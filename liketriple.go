@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -14,9 +17,10 @@ import (
 )
 
 var (
-	mid  string
-	bv   string
-	_url = "http://api.bilibili.com/x/space/coin/video?vmid="
+	mid    string
+	bv     string
+	_url   = "http://api.bilibili.com/x/space/coin/video?vmid="
+	_viyrl = "http://api.bilibili.com/x/web-interface/view?bvid="
 
 	hookableSignals = []os.Signal{
 		syscall.SIGHUP,
@@ -28,6 +32,7 @@ var (
 	}
 	defaultHeartbeatTime = 30 * time.Second //1 * time.Minute
 	wg                   sync.WaitGroup
+	Invalidvideoformat   = "Invalid video format"
 )
 
 type coinVideo struct {
@@ -139,7 +144,7 @@ func getCoinVideo(vmid string) (cv *coinVideo, err error) {
 	return
 }
 
-func init() {
+func initCheck() {
 	if os.Getenv("mid") == "" {
 		panic("mid not set!")
 	}
@@ -147,6 +152,7 @@ func init() {
 }
 
 func main() {
+	initCheck()
 	go func() {
 		log.Println("LikeTriple(一键三连) 启动成功 \n\n哔哩哔哩 (゜-゜)つロ 干杯~-bilibili\n ")
 		for range time.Tick(defaultHeartbeatTime) {
@@ -183,7 +189,18 @@ func main() {
 				if os.Getenv("format") == "flv" {
 					cmd = exec.Command("you-get", "-o", "/download", video.Data[0].ShortLink)
 				} else {
-					cmd = exec.Command("you-get", "-o", "/download", "--format=dash-flv", video.Data[0].ShortLink)
+					format := calcFormat(video.Data[0].Dimension.Height)
+					if format != "" {
+						cmd = exec.Command("you-get", "-o", "/download", "--format="+format, video.Data[0].ShortLink)
+					} else {
+						format, err := videoformat(video.Data[0].ShortLink)
+						if err != nil {
+							log.Println("videoformat Err:", err.Error())
+							cmd = exec.Command("you-get", "-o", "/download", video.Data[0].ShortLink)
+						}
+						cmd = exec.Command("you-get", "-o", "/download", "--format="+format, video.Data[0].ShortLink)
+					}
+
 				}
 
 				out, err := cmd.Output()
@@ -208,4 +225,96 @@ func main() {
 func fileISexist(name string) bool {
 	_, err := os.Stat(name)
 	return err == nil || os.IsExist(err)
+}
+
+func calcFormat(height int) string {
+	if height > 720 {
+		return "dash-flv"
+	} else if height > 480 {
+		return "dash-flv720"
+	}
+	return ""
+}
+
+// videoinfo you-get json struct
+type videoinfo struct {
+	URL     string `json:"url,omitempty"`
+	Title   string `json:"title,omitempty"`
+	Site    string `json:"site,omitempty"`
+	Streams struct {
+		Flv struct {
+			Container string   `json:"container,omitempty"`
+			Quality   string   `json:"quality,omitempty"`
+			Size      int      `json:"size,omitempty"`
+			Src       []string `json:"src,omitempty"`
+		} `json:"flv,omitempty"`
+		Flv720 struct {
+			Container string   `json:"container,omitempty"`
+			Quality   string   `json:"quality,omitempty"`
+			Size      int      `json:"size,omitempty"`
+			Src       []string `json:"src,omitempty"`
+		} `json:"flv720,omitempty"`
+		Flv480 struct {
+			Container string   `json:"container,omitempty"`
+			Quality   string   `json:"quality,omitempty"`
+			Size      int      `json:"size,omitempty"`
+			Src       []string `json:"src,omitempty"`
+		} `json:"flv480,omitempty"`
+		Flv360 struct {
+			Container string   `json:"container,omitempty"`
+			Quality   string   `json:"quality,omitempty"`
+			Size      int      `json:"size,omitempty"`
+			Src       []string `json:"src,omitempty"`
+		} `json:"flv360,omitempty"`
+		DashFlv struct {
+			Container string     `json:"container,omitempty"`
+			Quality   string     `json:"quality,omitempty"`
+			Src       [][]string `json:"src,omitempty"`
+			Size      int        `json:"size,omitempty"`
+		} `json:"dash-flv,omitempty"`
+		DashFlv720 struct {
+			Container string     `json:"container,omitempty"`
+			Quality   string     `json:"quality,omitempty"`
+			Src       [][]string `json:"src,omitempty"`
+			Size      int        `json:"size,omitempty"`
+		} `json:"dash-flv720,omitempty"`
+		DashFlv480 struct {
+			Container string     `json:"container,omitempty"`
+			Quality   string     `json:"quality,omitempty"`
+			Src       [][]string `json:"src,omitempty"`
+			Size      int        `json:"size,omitempty"`
+		} `json:"dash-flv480,omitempty"`
+		DashFlv360 struct {
+			Container string     `json:"container,omitempty"`
+			Quality   string     `json:"quality,omitempty"`
+			Src       [][]string `json:"src,omitempty"`
+			Size      int        `json:"size,omitempty"`
+		} `json:"dash-flv360,omitempty"`
+	} `json:"streams,omitempty"`
+	Extra struct {
+		Referer string `json:"referer,omitempty"`
+		Ua      string `json:"ua,omitempty"`
+	} `json:"extra,omitempty"`
+}
+
+func videoformat(vurl string) (string, error) {
+	cmd := exec.Command("you-get", "--json", vurl)
+	out, err := cmd.Output()
+	if err != nil {
+		return "", errors.New(string(out))
+	}
+	var vi videoinfo
+	if err := json.NewDecoder(ioutil.NopCloser(bytes.NewReader(out))).Decode(&vi); err != nil {
+		return "", err
+	}
+	if vi.Streams.DashFlv.Quality != "" {
+		return "dash-flv", nil
+	} else if vi.Streams.DashFlv720.Quality != "" {
+		return "dash-flv720", nil
+	} else if vi.Streams.DashFlv480.Quality != "" {
+		return "dash-flv480", nil
+	} else if vi.Streams.DashFlv360.Quality != "" {
+		return "dash-flv360", nil
+	}
+	return "", err
 }
