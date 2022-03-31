@@ -1,16 +1,17 @@
-FROM  golang:1.15.9-alpine as builder
+FROM  golang:alpine as builder
 LABEL maintainer="C菌"
 WORKDIR  /go/src
 COPY  .  .
-RUN go build -ldflags="-s -w" -o  LikeTriple
+ENV GO111MODULE=off
+RUN go build  -o  LikeTriple
 
 
 FROM python:3-alpine
 # RUN apk add -U tzdata
 # RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai  /etc/localtime
 
-RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/repositories \
- && apk --no-cache add ffmpeg \
+# RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/repositories \
+RUN  apk --no-cache add ffmpeg \
  && pip3 install --no-cache-dir you-get \
  && mkdir -p /download && mkdir -p /app
 
