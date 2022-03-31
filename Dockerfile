@@ -2,7 +2,7 @@ FROM  golang:1.15.9-alpine as builder
 LABEL maintainer="C菌"
 WORKDIR  /go/src
 COPY  .  .
-RUN GOARCH=amd64 GOOS=linux go build -ldflags="-s -w" -o  LikeTriple
+RUN go build -ldflags="-s -w" -o  LikeTriple
 
 
 FROM python:3-alpine
